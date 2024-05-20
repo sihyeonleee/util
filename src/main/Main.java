@@ -51,8 +51,8 @@ public class Main {
         out.getVerticalScrollBar().setUnitIncrement(16);
         err.getVerticalScrollBar().setUnitIncrement(16);
         
-//        System.setOut( outStream );
-//        System.setErr( errStream );
+        System.setOut( outStream );
+        System.setErr( errStream );
         
 //		net.clientOn(10000);
 		
