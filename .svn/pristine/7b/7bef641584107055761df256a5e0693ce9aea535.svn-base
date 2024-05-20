@@ -1,0 +1,20 @@
+package comm.fileio;
+
+import java.util.List;
+import java.util.Map;
+
+import comm.DBConnection;
+
+public class avg {
+	public static void main(String[] arge) {
+		DBConnection db1 = new DBConnection("oc", "jdbc:mysql://ebsoc1prodmysql.mysql.database.azure.com/ebsesof", DBConnection.MYSQL, "esofedu@ebsoc1prodmysql", "esofedu");
+		Map<String, Object> map = db1.execute(DBConnection.EXECUTE_QUERY, "SELECT * FROM TB_SUM_USER_INFO WHERE USER_ID= 'kkujae79' LIMIT 1", "");
+		List<Map<String,Object>> data = (List<Map<String, Object>>) map.get("data");
+		for(Map<String, Object> d : data){
+			for(Map.Entry<String, Object> k : d.entrySet()){
+				System.out.print(k.getKey() + " / ");
+				System.out.println(k.getValue());
+			}
+		}
+	}
+}

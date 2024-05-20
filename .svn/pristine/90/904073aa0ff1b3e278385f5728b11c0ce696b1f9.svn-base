@@ -1,0 +1,15 @@
+package comm;
+
+import java.io.File;
+
+import javax.swing.filechooser.FileSystemView;
+
+public class Path {
+	
+	public static String ROOTPATH = File.separator;
+	
+	public static String COREPATH = "." + File.separator + "Core.exe";
+	
+	public static String DESKTOPPATH = FileSystemView.getFileSystemView().getHomeDirectory().getPath();
+
+}

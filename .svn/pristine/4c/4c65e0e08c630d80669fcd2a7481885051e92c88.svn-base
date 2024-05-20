@@ -1,0 +1,63 @@
+package main;
+
+import gui.main.MainFrame;
+
+public class Main {
+	
+	public static void main(String []args){
+		
+		// 멀티플 실행기는 name 앞에 #을 추가해준다. 
+		String[] names = {
+				  "File Manage"
+//				, "Task Manage"
+//				, "Learning Manager"
+				
+//				, "Text File Convert"
+//				, "Text To Excel" /*#*/
+//				, "Xcel Files Merge" /*#*/
+				
+				
+//				, "Column To Code"
+//				, "Prpr Type Query"
+//				, "Database"
+				
+				
+				, "---------------------"
+				, "통계"
+				, "계산"
+				, "Log"
+				, "Workspace"
+				, "종료"
+		};
+		String[] events = {
+				  "manager.FileManager"
+//				, "manager.TaskManager2"
+//				, "manager.LearningManager"
+				
+				
+//				, "write.TextFileConvert"
+//				, "write.TextToExcel"
+//				, "write.XcelFilesMerge"
+				
+				
+//				, "database.ColToVariable"
+//				, "database.PrprQueryExc"
+//				, "database.DbConnConfig"
+				
+				
+				, "---------------------"
+				, "tmp.AVG"
+				, "tmp.CALC"
+				, "config.Logger" 
+				, "config.Path"
+				, "config.Exit"
+		};
+		
+		MainFrame mainFrame = new MainFrame(names, events);
+		mainFrame.showFrame();
+		
+	}
+}
+
+
+

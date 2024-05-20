@@ -1,0 +1,1181 @@
+package service;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.MenuItem;
+import java.awt.Panel;
+import java.awt.PopupMenu;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import comm.CustomThread;
+import comm.DBConnection;
+import comm.Logger;
+import comm.fileio.FileService;
+import comm.fileio.TextFileReader;
+import gui.obj.ComboBoxObj;
+import gui.obj.CompObj;
+import gui.obj.FrameObj;
+import gui.obj.ImageObj;
+
+public abstract class Service {
+	
+	public static Logger log = Logger.getInstance();
+	
+	public Integer layout = 1;
+	
+	public int width = 1000;
+	public int height = 1000;
+	
+	public Map<String, CustomThread> threads = new HashMap<>();
+	public List<CompObj> componentObjs = new ArrayList<>();
+	public List<JTextField> inputs = new ArrayList<>();
+	public List<JLabel> outputs = new ArrayList<>();
+	public List<JButton> buttons = new ArrayList<>();
+	public List<JCheckBox> checkBoxes = new ArrayList<>();
+	public List<JTextArea> textAreas = new ArrayList<>();
+	public List<Component> scrollPanes = new ArrayList<>();
+	@SuppressWarnings("rawtypes")
+	public List<JComboBox> comboBoxes = new ArrayList<>();
+	public List<Container> panels = new ArrayList<>();
+	public FrameObj frame;
+	
+	public static DBConnection db = null;
+	public static Map<Integer, DBConnection> dbs = new HashMap<>();
+	
+	
+	
+	
+	
+	
+	
+	
+	public void init( final String name ) throws Exception{
+
+//		SwingUtilities.invokeLater(new Runnable(){
+//			public void run(){
+				frame = new FrameObj(name, width, height, layout);
+				
+				if( componentObjs.size() > 0 ){
+					for(int i=0; i<componentObjs.size(); i++){
+						
+						CompObj obj = componentObjs.get(i);
+						
+						obj.setIndex(i);
+						
+						Component c = null;
+						
+						appendObj(obj, c, i);
+						
+					}
+				}
+				
+				frame.setIconImage(ImageObj.getMainIcon());
+//			}
+//		});
+		
+	}
+	
+	public void appendObj(CompObj obj, Component c, int index) {
+		
+		c = componentInjection(obj, c, index);
+		c = eventInjection(obj, c, index);
+		c.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() == 27) frame.dispose();
+			}
+		});
+		
+		Integer type = obj.getArrangeType();
+		
+		if(layout == FrameObj.LAYOUT_GRIDBAG){
+			
+			GridBagConstraints gbc = new GridBagConstraints();
+			
+			gbc.gridx = obj.getGridX();
+			gbc.gridy = obj.getGridY();
+			gbc.weightx = obj.getWeightX();
+			gbc.weighty = obj.getWeightY();
+			gbc.gridwidth = obj.getGridWidth();
+			gbc.gridheight = obj.getGridHeight();
+			gbc.ipadx = obj.getIpadX();
+			gbc.ipady = obj.getIpadY();
+			
+			if(type != null){
+				gbc.fill = type;
+			}
+			
+			frame.append(c, gbc);
+			
+		} else if(type != null){
+			frame.append(c, type);
+		} else {
+			frame.append(c);
+		}
+	}
+	
+	@SuppressWarnings({ "rawtypes" })
+	public Component componentInjection(CompObj obj, Component c, final int i) {
+		
+		final CompObj object = obj;
+		Component result = null;
+		
+		switch(obj.getType()){
+			case CompObj.TYPE_INPUT: 
+				
+				final JTextField input = new JTextField(object.getMsg(), object.getCharX());
+				
+				input.setEditable(object.isEnabled());
+				
+				if(!object.getHint().equals("") ) {
+					
+					input.setToolTipText(object.getHint());
+					
+					if(object.getMsg().trim().equals("")){
+						input.setText(object.getHint());
+						input.setForeground(Color.GRAY);  
+					}
+					
+					input.addFocusListener(new FocusAdapter() {
+						  
+						@Override  
+						public void focusGained(FocusEvent e) {  
+							if (input.getText().equals(object.getHint())) {  
+								input.setText("");  
+							}else {
+				        		input.setForeground(Color.BLACK);  
+							}
+						}  
+						@Override  
+				      	public void focusLost(FocusEvent e) {  
+							if (input.getText().equals(object.getHint())|| input.getText().length()==0) {  
+				        		input.setText(object.getHint());  
+				        		input.setForeground(Color.GRAY);  
+				        	} else {  
+				        		input.setForeground(Color.BLACK);  
+				        	}  
+						}  
+					});  
+				}
+				
+				c = input;
+				result = c;
+				inputs.add( (JTextField) c );
+				
+				break;
+			case CompObj.TYPE_OUTPUT: 
+				
+				c = new JLabel(object.getMsg());
+				result = c;
+				c.setEnabled(object.isEnabled());
+				outputs.add( (JLabel) c );
+				
+				break;
+			case CompObj.TYPE_BUTTON: 
+				
+				String title = object.getName();
+				
+				if(title.equals("")){
+					title = "btn_" + i;
+				}
+				
+				c = new JButton(title);
+				result = c;
+				c.setEnabled(object.isEnabled());
+				buttons.add( (JButton) c );
+				
+				break;
+			case CompObj.TYPE_CHECKBOX: 
+				
+				c = new JCheckBox(object.getMsg());
+				result = c;
+				c.setEnabled(object.isEnabled());
+				checkBoxes.add( (JCheckBox) c );
+				
+				break;
+			case CompObj.TYPE_TEXTAREA: 
+				
+				final JTextArea textArea = new JTextArea(object.getMsg(), object.getCharY(), object.getCharX());
+				textArea.setEditable(object.isEnabled());
+				
+				if(!object.getHint().equals("")) {
+					
+					textArea.setText(object.getHint());  
+					textArea.setForeground(Color.GRAY);  
+					
+					textArea.addFocusListener(new FocusAdapter() {
+						  
+						@Override  
+						public void focusGained(FocusEvent e) {  
+							if (textArea.getText().equals(object.getHint())) {  
+								textArea.setText("");  
+							}else {
+								textArea.setForeground(Color.BLACK);  
+							}
+						}  
+						@Override  
+				      	public void focusLost(FocusEvent e) {  
+							if (textArea.getText().equals(object.getHint())|| textArea.getText().length()==0) {  
+								textArea.setText(object.getHint());  
+								textArea.setForeground(Color.GRAY);  
+				        	} else {  
+				        		textArea.setForeground(Color.BLACK);  
+				        	}  
+						}  
+					});  
+				}
+				
+				c = textArea;
+				result = c;
+				textAreas.add( (JTextArea) c );
+				
+				if(object.isScrollAt()){
+					JScrollPane scroll = new JScrollPane( c );
+					result = scroll;
+					scrollPanes.add( scroll );
+				} else {
+					scrollPanes.add( c );
+				}
+				
+				break;
+				
+			case CompObj.TYPE_COMBOBOX: 
+				
+				c = new ComboBoxObj<String>(object.getSelectItems());
+				result = c;
+				c.setEnabled(object.isEnabled());
+				comboBoxes.add( (JComboBox) c );
+				
+				break;
+				
+			case CompObj.TYPE_PANEL: 
+				
+				if(object.getLayout() instanceof BoxLayout){
+					
+					BoxLayout layout = (BoxLayout) object.getLayout();
+					
+					JPanel panel = new JPanel();
+					panel.setLayout(new BoxLayout(panel, layout.getAxis()));
+					
+					c = panel;
+					
+				}else {
+					c = new JPanel(object.getLayout());
+				}
+				c.setEnabled(object.isEnabled());
+				result = c;
+				panels.add( (Container) c );
+				if(object.isScrollAt()){
+					JScrollPane scroll = new JScrollPane( c );
+					// scroll.getVerticalScrollBar().setUI(new ScrollBarUI());
+					scroll.getVerticalScrollBar().setUnitIncrement(16);
+					result = scroll;
+					scrollPanes.add( scroll );
+				} else {
+					((JPanel) c).setBorder(new LineBorder(new Color(100,100,100,40)));
+					scrollPanes.add( c );
+				}
+				break;
+			case CompObj.TYPE_TABPANEL: 
+				
+				JTabbedPane tPane = new JTabbedPane();
+				if(object.getNames() != null){
+					for(int j=0;j<object.getNames().length; j++){
+						String name = object.getNames()[j];
+						JPanel panel = new JPanel(new BorderLayout());
+						tPane.add(name, panel);
+					}
+				}
+				panels.add( (Container) tPane );
+				result = tPane;
+				break;
+			default : 
+				break;
+		}
+		
+		if(object.getPopupItems().length > 0) {
+			
+			final PopupMenu popupMenu = new PopupMenu();
+			for(int j=0;j<object.getPopupItems().length; j++) {
+				String menu = object.getPopupItems()[j];
+				final MenuItem item = new MenuItem(menu);
+				item.addActionListener(new ActionListener() {
+				   @Override
+				   public void actionPerformed(ActionEvent e) {
+					   try {
+						onEvent("menu", obj, item);
+					} catch (Exception err) {
+						err.printStackTrace();
+						log.err(err);
+					}
+				   }
+				});
+				popupMenu.add(item);
+			}
+			c.add(popupMenu);
+			
+			final Component comp = c;
+			
+			 c.addMouseListener(new MouseAdapter() {  
+	            public void mouseClicked(MouseEvent e) {   
+	            	// 더블 클릭
+	            	if(e.getClickCount() == 2) {
+	            		try {
+							onEvent("double", obj);
+						} catch (Exception err) {
+							err.printStackTrace();
+							log.err(err);
+						}
+	            	}
+	            	
+	            	// 우클릭
+	            	if(e.isMetaDown()) {
+	            		popupMenu.show(comp, e.getX(), e.getY());  
+	            	}
+	            }                 
+	         });  
+		}
+		
+		if(object.getWidth() != null && object.getHeight() != null){
+			if(object.getPositionX() != null && object.getPositionY() != null){
+				c.setBounds(object.getPositionX(), object.getPositionY(), object.getWidth(), object.getHeight());
+			}else {
+				c.setSize(object.getWidth(), object.getHeight());
+			}
+		}
+		
+//		c.setFocusable(obj.isFocus());
+		
+		return result;
+	}
+	
+	public Component eventInjection(CompObj obj, Component c, int i){
+		
+		final int index = i;
+		
+		if(obj.getEventType().length > 0){
+			for(int type : obj.getEventType()){
+				
+				switch(type){
+				
+					case CompObj.EVENT_ACTION :
+						switch(obj.getType()){
+							case CompObj.TYPE_INPUT: 
+								JTextField input = ( JTextField ) c;
+								input.addActionListener(new AbstractAction() {
+									private static final long serialVersionUID = 1L;
+									@Override
+									public void actionPerformed(ActionEvent e) {
+										try {
+											onEvent( "enter", obj );
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								break;
+							case CompObj.TYPE_OUTPUT: 
+								break;
+							case CompObj.TYPE_COMBOBOX:
+								@SuppressWarnings("rawtypes") final JComboBox combobox = ( JComboBox ) c;
+								combobox.addActionListener(new ActionListener() {
+									@Override
+									public void actionPerformed(ActionEvent e) {
+										try {
+											onEvent( "change", obj , combobox.getSelectedIndex(), combobox.getSelectedItem());
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								break;
+							case CompObj.TYPE_BUTTON:
+								JButton button = ( JButton ) c;
+								button.addActionListener(new ActionListener() {
+									@Override
+									public void actionPerformed(ActionEvent e) {
+										try {
+											onEvent( "click", obj );
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								break;
+							case CompObj.TYPE_CHECKBOX:
+								JCheckBox checkbox = ( JCheckBox ) c;
+								checkbox.setSelected(obj.isSelected());
+								checkbox.addItemListener(new ItemListener() {
+									
+									@Override
+									public void itemStateChanged(ItemEvent e) {
+										try {
+											onEvent( "change", obj, checkbox.isSelected());
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								break;
+							case CompObj.TYPE_TEXTAREA: 
+								break;
+							default : 
+								break;
+						}
+						break;
+					case CompObj.EVENT_TYPING :
+						switch(obj.getType()){
+							case CompObj.TYPE_INPUT: 
+								
+								final JTextField input = ( JTextField ) c;
+								input.getDocument().addDocumentListener(new DocumentListener() {
+									
+									@Override
+									public void removeUpdate(DocumentEvent e) {
+										try {
+											onEvent("tyRemove", obj, input.getText());
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+									
+									@Override
+									public void insertUpdate(DocumentEvent e) {
+										try {
+											onEvent("tyInsert", obj, input.getText());
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+									
+									@Override
+									public void changedUpdate(DocumentEvent arg0) {
+										try {
+											onEvent("tyUpdate", obj, input.getText());
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								
+								break;
+							case CompObj.TYPE_OUTPUT: 
+								break;
+							case CompObj.TYPE_BUTTON:
+								break;
+							case CompObj.TYPE_TEXTAREA: 
+								break;
+							default : 
+								break;
+						}
+						break;
+					case CompObj.EVENT_KEYTYPE :
+						switch(obj.getType()){
+							case CompObj.TYPE_INPUT: 
+								
+								final JTextField input = ( JTextField ) c;
+								input.addKeyListener(new KeyListener() {
+									
+									KeyEvent e;
+									
+									@Override
+									public void keyTyped(KeyEvent e) {
+										try {
+											onEvent("keyTyped", obj, this.e);
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+									
+									@Override
+									public void keyReleased(KeyEvent e) {
+										try {
+											onEvent("keyRelea", obj, e);
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+									
+									@Override
+									public void keyPressed(KeyEvent e) {
+										try {
+											this.e = e;
+											onEvent("keyPress", obj, e);
+										} catch (Exception err) {
+											err.printStackTrace();
+											log.err(err);
+										}
+									}
+								});
+								
+								break;
+							case CompObj.TYPE_OUTPUT: 
+								break;
+							case CompObj.TYPE_BUTTON:
+								break;
+							case CompObj.TYPE_TEXTAREA: 
+								break;
+							default : 
+								break;
+						}
+						break;
+					case CompObj.EVENT_DRAGDROP :
+						
+						if( obj.getType() == CompObj.TYPE_TEXTAREA && obj.isScrollAt() ){
+							textAreas.get(textAreas.size()-1).setDropTarget(new DropTarget() {
+								private static final long serialVersionUID = 1L;
+
+								@SuppressWarnings("unchecked")
+								public synchronized void drop(DropTargetDropEvent evt) {
+							        try {
+							            evt.acceptDrop(DnDConstants.ACTION_COPY);
+							            List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+							            onEvent( "change", obj, droppedFiles.toArray() );
+							        } catch (Exception err) {
+							        	err.printStackTrace();
+							        	log.err(err);
+							        }
+							    }
+							});
+						}else {
+							c.setDropTarget(new DropTarget() {
+								private static final long serialVersionUID = 1L;
+
+								@SuppressWarnings("unchecked")
+								public synchronized void drop(DropTargetDropEvent evt) {
+							        try {
+							            evt.acceptDrop(DnDConstants.ACTION_COPY);
+							            List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+							            onEvent( "change", obj, droppedFiles.toArray() );
+							        } catch (Exception err) {
+							        	err.printStackTrace();
+							        	log.err(err);
+							        }
+							    }
+							});
+						}
+						break;
+					default : 
+						break;
+						
+				}
+				
+			}
+		}
+		return c;
+	}
+	
+	public static DBConnection createDbObject(int index) {
+		
+		if(dbs.get(index) == null){
+			
+			TextFileReader reader = new TextFileReader(comm.Path.ROOTPATH + FileService.PATH_DIRECTORY_PROP, FileService.PATH_FILE_DATABASE, FileService.EXEC_FILE_LSH);
+			String dbInfo = reader.reade(true);
+			
+			Map<String, Map<String, String>> result = reader.getKeyValueTypeDataToMap(dbInfo, "DB_INFO", null);
+			
+			Map<String, String> map = result.get(""+index);
+			
+			try{
+				
+				db = new DBConnection(map.get("name"), map.get("url"), map.get("driver"), map.get("user"), map.get("password"));
+				dbs.put(index, db);
+				
+			} catch(NullPointerException err){
+				log.err("DB정보가 잘못 되었습니다. : 연결 실패");
+				log.err(err);
+				
+				db = new DBConnection("", "", "", "", "");
+			}
+			
+			if(db != null){
+				if(db.isConnection()) {
+					log.log( "" );
+					log.log( "" );
+					log.log( "### DATABASE 연결 정보 ###" );
+					log.log( "구분 	: " 	+ db.getName() );
+					log.log( "url 	: " 	+ db.getUrl() );
+					log.log( "driver	: " 	+ db.getDriver() );
+					log.log( "user 	: "		+ db.getUserNm() );
+					log.log( "password	: " 	+ db.getUserPw() );
+					log.log( "" );
+					log.log( "" );
+					log.log( "" );
+				}else {
+					log.err( "" );
+					log.err( "" );
+					log.err( "### DATABASE 연결 실패 정보 ###" );
+					log.err( "구분 	: " 	+ db.getName() );
+					log.err( "url 	: " 	+ db.getUrl() );
+					log.err( "driver	: " 	+ db.getDriver() );
+					log.err( "user 	: "		+ db.getUserNm() );
+					log.err( "password	: " 	+ db.getUserPw() );
+					log.err( "" );
+					log.err( "" );
+					log.err( "" );
+				}
+			}
+			
+		}else {
+			if(db != dbs.get(index)){
+				db = dbs.get(index);
+				
+				log.log( "" );
+				log.log( "" );
+				log.log( "### DATABASE 변경 정보 ###" );
+				log.log( "구분 	: " 	+ db.getName() );
+				log.log( "url 	: " 	+ db.getUrl() );
+				log.log( "driver	: " 	+ db.getDriver() );
+				log.log( "user 	: "		+ db.getUserNm() );
+				log.log( "password	: " 	+ db.getUserPw() );
+				log.log( "" );
+				log.log( "" );
+				log.log( "" );
+			}
+		}
+
+		return db;
+		
+	}
+	
+	public void doShow( String name ) {
+		
+		frame.doShow();
+
+		/*frame.toFront(); // it doesn't work!
+		frame.setExtendedState( JFrame.MAXIMIZED_BOTH);	
+		frame.setExtendedState(JFrame.NORMAL);	
+		frame.setState(JFrame.NORMAL);
+		frame.setAlwaysOnTop(true);
+		frame.setAlwaysOnTop(false);*/
+		
+		/*frame.requestFocusInWindow();
+		
+		frame.addKeyListener(new KeyListener() {
+				
+			@Override
+			public void keyTyped(KeyEvent e) {
+				
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() == 27) frame.dispose();
+			}
+		});*/
+	}
+	
+	public void onEvent(String type, CompObj obj, Object...objects) throws Exception{
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	// 메세지 전달
+	public void setMessage(String type, int index, String msg) {
+		if(type.equals("input")){
+			inputs.get(index).setText(msg);
+		}else if(type.equals("output")){
+			outputs.get(index).setText(msg);
+		}else if(type.equals("button")){
+			buttons.get(index).setText(msg);
+		}else if(type.equals("textArea")){
+			textAreas.get(index).setText(msg);
+			textAreas.get(index).setCaretPosition(textAreas.get(index).getDocument().getLength());
+		}
+	}
+	
+	public void appendMessage(String type, int index, String msg) {
+		if(type.equals("input")){
+			inputs.get(index).setText(inputs.get(index).getText() + msg);
+		}else if(type.equals("output")){
+			outputs.get(index).setText(outputs.get(index).getText() + msg);
+		}else if(type.equals("button")){
+			buttons.get(index).setText(buttons.get(index).getText() + msg);
+		}else if(type.equals("textArea")){
+			textAreas.get(index).setText(textAreas.get(index).getText() + msg);
+			textAreas.get(index).setCaretPosition(textAreas.get(index).getDocument().getLength());
+		}
+	}
+	
+	public String getMessage(String type, int index){
+		String result = "";
+		if(type.equals("input")){
+			result =  inputs.get(index).getText();
+		}else if(type.equals("output")){
+			result =   outputs.get(index).getText();
+		}else if(type.equals("button")){
+			result =   buttons.get(index).getText();
+		}else if(type.equals("textArea")){
+			result =   textAreas.get(index).getText();
+		}
+		return result;
+	}
+	
+	
+	
+	
+	
+	
+	
+	// 팝업창
+	public void warningPop(String msg){
+	    Toolkit.getDefaultToolkit().beep();
+	    JOptionPane optionPane = new JOptionPane( msg, JOptionPane.WARNING_MESSAGE );
+	    JDialog dialog = optionPane.createDialog( "Warning!" );
+	    dialog.setAlwaysOnTop(true);
+	    dialog.setVisible(true);
+	}
+	
+	public void alertPop(Object msg){
+		JOptionPane.showMessageDialog(null, msg);
+	}
+	
+	public void alertPop(Object[] msg){
+		JOptionPane.showMessageDialog(null, msg);
+	}
+	
+	public void alertPop(String title, String msg){
+		JOptionPane.showMessageDialog(null, msg, title, JOptionPane.PLAIN_MESSAGE);
+	}
+	
+	public int confirmPop(Object msg){
+		// JOptionPane.YES_OPTION, JOptionPane.NO_OPTION, JOptionPane.CANCEL_OPTION
+		int result = JOptionPane.showConfirmDialog(null, msg);
+		
+		switch(result){
+			case JOptionPane.YES_OPTION :
+				result = 1;
+				break;
+			case JOptionPane.NO_OPTION :
+			case JOptionPane.CANCEL_OPTION :
+			case JOptionPane.CLOSED_OPTION  :
+				result = -1;
+				break;
+		}
+		
+		return result;
+	}
+
+	public int confirmPop(String title, Object msg){
+		
+		int result = JOptionPane.showConfirmDialog(null, msg, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
+		
+		/*String[] options = {"OK", "Cancel"};
+		int result = JOptionPane.showOptionDialog(null, msg, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, null);*/
+		
+		switch(result){
+			case JOptionPane.YES_OPTION :
+				result = 1;
+				break;
+			case JOptionPane.NO_OPTION :
+			case JOptionPane.CANCEL_OPTION :
+			case JOptionPane.CLOSED_OPTION  :
+				result = -1;
+				break;
+		}
+		
+		return result;
+	}
+	
+	public Map<String, String> confirmPop(String title, List<String> inputList){
+		
+		Object[] inputs = inputList.toArray();
+		
+		return confirmPop(title, inputs, 0, 0);
+		
+	}
+	
+	public Map<String, String> confirmPop(String title, Object[] inputs){
+		
+		return confirmPop(title, inputs, 0, 0);
+		
+	}
+	
+	public Map<String, String> confirmPop(String title, List<String> inputList, int aWidth, int aHeight){
+		
+		Object[] inputs = inputList.toArray();
+		
+		return confirmPop(title, inputs, aWidth, aHeight);
+		
+	}
+	
+	public Map<String, String> confirmPop(String title, Object[] inputs, int aWidth, int aHeight){
+		
+		Map<String, String> resultData = new HashMap<>();
+		
+		Map<String, JTextField> storeObj = new HashMap<>();
+		
+		Map<String, JTextArea> aStoreObj = new HashMap<>();
+		
+		GridBagLayout gbl = new GridBagLayout();
+		JPanel pane = new JPanel(gbl);
+		
+		for(int i=0; i<inputs.length; i++){
+			
+			String name = (String) inputs[i];
+			
+			JLabel label = new JLabel(name);
+			
+			JTextField input = null;
+			JTextArea aInput = null;
+			
+			if(aWidth!=0){
+				aInput = new JTextArea(aHeight, aWidth);
+				aStoreObj.put(name, aInput);
+			}else {
+				input = new JTextField(15);
+				storeObj.put(name, input);
+			}
+			
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridy = i;
+			gbc.ipadx = 10;
+			gbc.fill = GridBagConstraints.BOTH;
+			
+			gbc.gridx = 0;
+			pane.add(label, gbc);
+			
+			gbc.weightx = 10;
+			gbc.gridwidth = 2;
+			gbc.gridx = 1;
+			
+			if(aWidth!=0){
+				JScrollPane scroll = new JScrollPane(aInput);
+				scroll.getVerticalScrollBar().setUnitIncrement(16);
+				scroll.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+				pane.add(scroll, gbc);
+			}else {
+				pane.add(input, gbc);
+			}
+			
+		}
+		
+		JScrollPane scroll = new JScrollPane(pane);
+		
+		scroll.getVerticalScrollBar().setUnitIncrement(16);
+		
+		scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		
+		int result = JOptionPane.showConfirmDialog(null, scroll, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
+		
+		switch(result){
+		case JOptionPane.YES_OPTION :
+			
+			for(Object key : inputs){
+				
+				String text = "";
+				
+				if(aWidth != 0){
+					text = aStoreObj.get(key).getText();
+				}else {
+					text = storeObj.get(key).getText();
+				}
+				
+				if(!text.trim().equals("")){
+					resultData.put( (String) key, text);
+				}
+				
+			}
+			
+			resultData.put("result", "confirm");
+			
+			break;
+			
+		case JOptionPane.NO_OPTION :
+		case JOptionPane.CANCEL_OPTION :
+		case JOptionPane.CLOSED_OPTION  :
+			resultData.put("result", "cancel");
+			break;
+		}
+		
+		return resultData;
+		
+	}
+	
+	public Map<String, String> confirmPop(String title, String[] inputs, Map<String, String> datas){
+		return confirmPop(title, inputs, datas, 0, 0);
+	}
+	
+	public Map<String, String> confirmPop(String title, List<String> inputs, Map<String, String> datas){
+		return confirmPop(title, inputs.toArray(), datas, 0, 0);
+	}
+	
+	public Map<String, String> confirmPop(String title, List<Object> inputs, Map<String, String> datas, int aWidth, int aHeight){
+		return confirmPop(title, inputs.toArray(), datas, aWidth, aHeight);
+	}
+	
+	public Map<String, String> confirmPop(String title, Object[] inputs, Map<String, String> datas, int aWidth, int aHeight){
+		
+		Map<String, String> resultData = new HashMap<>();
+		Map<String, JTextField> storeObj = new HashMap<>();
+		Map<String, JTextArea> aStoreObj = new HashMap<>();
+		
+		GridBagLayout gbl = new GridBagLayout();
+		JPanel pane = new JPanel(gbl);
+		
+		for(int i=0; i<inputs.length; i++){
+			
+			String name = (String) inputs[i];
+			
+			JLabel label = new JLabel(name);
+			
+			JTextField input = null;
+			JTextArea aInput = null;
+			
+			if(aWidth!=0){
+				aInput = new JTextArea(datas.get(name), aHeight, aWidth);
+				aStoreObj.put(name, aInput);
+			}else {
+				input = new JTextField(datas.get(name), 15);
+				storeObj.put(name, input);
+			}
+			
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridy = i;
+			gbc.ipadx = 10;
+			gbc.fill = GridBagConstraints.BOTH;
+			
+			gbc.gridx = 0;
+			pane.add(label, gbc);
+			
+			gbc.weightx = 10;
+			gbc.gridwidth = 2;
+			gbc.gridx = 1;
+
+			if(aWidth!=0){
+				JScrollPane scroll = new JScrollPane(aInput);
+				scroll.getVerticalScrollBar().setUnitIncrement(16);
+				scroll.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+				pane.add(scroll, gbc);
+			}else {
+				pane.add(input, gbc);
+			}
+			
+		}
+		
+		JScrollPane scroll = new JScrollPane(pane);
+		
+		scroll.getVerticalScrollBar().setUnitIncrement(16);
+
+		scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		
+		int result = JOptionPane.showConfirmDialog(null, scroll, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE);
+		
+		switch(result){
+		case JOptionPane.YES_OPTION :
+			
+			resultData.put("result", "confirm");
+			
+			for(Object key : inputs){
+				
+				String text = "";
+				
+				if(aWidth != 0){
+					text = aStoreObj.get(key).getText();
+				}else {
+					text = storeObj.get(key).getText();
+				}
+				
+				if(!text.trim().equals("")){
+					resultData.put( (String) key, text);
+				}
+			}
+			break;
+		case JOptionPane.NO_OPTION :
+		case JOptionPane.CANCEL_OPTION :
+		case JOptionPane.CLOSED_OPTION  :
+			resultData.put("result", "cancel");
+			break;
+		}
+		return resultData;
+	}
+	
+	public String inputPop(String msg){
+		return JOptionPane.showInputDialog(null, msg);
+	}
+	
+	public String inputPop(String title, String msg){
+		return JOptionPane.showInputDialog(null, msg, title, JOptionPane.PLAIN_MESSAGE);
+	}
+	
+	public Object selectPop(String msg, String select, String...selections){
+		
+		try{
+		
+			return  JOptionPane.showInputDialog(null, msg, "선택창", JOptionPane.PLAIN_MESSAGE, null, selections, select);
+		
+		}catch(ArrayIndexOutOfBoundsException err){
+			err.printStackTrace();
+			log.err("옵션을 확인해주세요 : " + selections.length);
+			log.err(err);
+			
+			warningPop("옵션을 확인해주세요 : " + selections.length);
+			return null;
+		}
+		
+	}
+	
+	public Object selectPop(String title, String msg, String select, String...selections){
+		
+		try{
+			
+			return JOptionPane.showInputDialog(null, msg, "선택창", JOptionPane.PLAIN_MESSAGE, null, selections, select);
+		
+		}catch(ArrayIndexOutOfBoundsException err){
+			err.printStackTrace();
+			log.err("옵션을 확인해주세요 : " + selections.length);
+			log.err(err);
+			
+			warningPop("옵션을 확인해주세요 : " + selections.length);
+			return null;
+		}
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	public CustomThread createThread(){
+		return new CustomThread();
+	}
+	
+	public CustomThread runThread(String threadName, boolean multiple){
+		
+		CustomThread thread = threads.get(threadName);
+		
+		if(thread == null){
+			thread = createThread();
+			thread.setName(threadName);
+			threads.put(threadName, thread);
+		}
+		
+		Thread.State state = thread.getState();
+		
+		if(state == Thread.State.NEW){
+			thread.start();
+		}if(state == Thread.State.TERMINATED){
+			thread = createThread();
+			thread.setName(threadName);
+			threads.put(threadName, thread);
+			thread.start();
+		}else if(state == Thread.State.RUNNABLE){
+			if(multiple){
+				thread = createThread();
+				thread.setName(threadName);
+				threads.put(threadName, thread);
+				thread.start();
+			}else {
+				String progress = "이미 처리중입니다. \nTHREAD_NAME ::: " + thread.getName();
+				progress += "\n진행률 : " + thread.getNowProc() + " / " + thread.getTotalProc();
+				progress += " ( " + thread.getPercent() + "% ) ";
+				alertPop(progress);
+			}
+		}
+		
+		return thread;
+		
+	}
+	
+	public void append(CompObj obj) {
+		
+		int index = 0;
+		
+		switch(obj.getType()) {
+			case CompObj.TYPE_INPUT :
+				index = inputs.size();
+				break;
+			case CompObj.TYPE_OUTPUT :
+				index = outputs.size();
+				break;
+			case CompObj.TYPE_BUTTON :
+				index = buttons.size();
+				break;
+			case CompObj.TYPE_TEXTAREA :
+				index = textAreas.size();
+				break;
+		}
+		
+		Component c = null;
+		
+		appendObj(obj, c, index);
+	}
+	
+}

@@ -1,0 +1,55 @@
+package service.config;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+
+import gui.obj.CompObj;
+import gui.obj.FrameObj;
+import service.Service;
+
+public class LoggerService extends Service{
+	public LoggerService() {
+		
+		// 프레임 설정
+		width = 800;
+		height = 800;
+		layout = FrameObj.LAYOUT_GRIDBAG;
+		
+		CompObj area1 = new CompObj();
+		area1.setType(CompObj.TYPE_TEXTAREA);
+		area1.setScrollAt(true);
+		area1.setCharY(30);
+		area1.setCharX(50);
+		area1.setGridWeight(1, 1);
+		area1.setGridPosition(0, 0);
+		area1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(area1);
+		
+		CompObj area2 = new CompObj();
+		area2.setType(CompObj.TYPE_TEXTAREA);
+		area2.setScrollAt(true);
+		area2.setCharY(30);
+		area2.setCharX(50);
+		area2.setGridWeight(1, 1);
+		area2.setGridPosition(5, 0);
+		area2.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(area2);
+		
+	}
+	
+	@Override
+	public void doShow(String name) {
+		
+//		Font font = new Font("Segoe Script", Font.BOLD, 20);
+//		textAreas.get(1).setFont(font);
+		textAreas.get(1).setForeground(Color.RED);
+		
+		log.setArea(textAreas.get(0));
+		log.setErrArea(textAreas.get(1));
+		
+		super.doShow(name);
+		
+	}
+	
+}

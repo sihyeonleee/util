@@ -1,0 +1,87 @@
+package gui.obj;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+
+public class FrameObj extends JFrame{
+	
+	private static final long serialVersionUID = 1L;
+	
+	public static final int LAYOUT_GRID = 1;
+	public static final int LAYOUT_FLOW = 2;
+	public static final int LAYOUT_BORDER = 3;
+	public static final int LAYOUT_GRIDBAG = 4;
+	
+	public JPanel container;
+	
+	public FrameObj(String name, int width, int height, int layout){
+		
+		this.setTitle(name);
+		
+		this.setSize( width, height );
+		
+		Dimension frameSize = this.getSize();
+		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		
+		switch(layout){
+			case LAYOUT_GRID :
+				GridLayout gl = new GridLayout(2,3);
+				container = new JPanel(gl);
+				break;
+			case LAYOUT_FLOW :
+				FlowLayout fl = new FlowLayout();
+				fl.setAlignment(FlowLayout.CENTER);
+				container = new JPanel(fl);
+				break;
+			case LAYOUT_BORDER :
+				BorderLayout bl = new BorderLayout();
+				container = new JPanel(bl);
+				break;
+			case LAYOUT_GRIDBAG :
+				GridBagLayout gbl = new GridBagLayout();
+				container = new JPanel(gbl);
+				break;
+			default : 
+				break;
+		}
+		
+		container.setBorder(new EmptyBorder(8,8,8,8));
+		
+		this.setContentPane(container);
+		
+//		this.setResizable(false);
+		
+		this.setLocation((screenSize.width - frameSize.width) / 2, (screenSize.height - frameSize.height) / 2);
+		
+	}
+	
+	public void append(Component component){
+		container.add(component);
+	}
+	
+	public void append(Component component, int arrangeType){
+		container.add(component, arrangeType);
+	}
+	
+	public void append(Component component, GridBagConstraints gbc){
+		container.add(component, gbc);
+	}
+	
+	public void doShow(){
+		this.setVisible(true);
+	}
+	public void doHide(){
+		this.setVisible(false);
+	}
+}

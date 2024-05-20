@@ -1,0 +1,109 @@
+package main.test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class StringWildCard {
+	public static void main(String[] args) {
+		
+	    /*String line = "asdfasdf#{test1}zxcvzxcv#{text}zxcv%{asdf}";
+	    String patternStr = "#\\{[a-z A-Z 1-9 -_.]+\\}|%\\{[a-z A-Z 1-9 -_.]+\\}";
+	    
+	    TextFileFormat fmt = new TextFileFormat(line, patternStr);
+	    
+	    System.out.println(fmt.findVarPosition().toString());
+	    
+	    Map<String, String> cvtList = new HashMap<>();
+	    
+	    for(String key : fmt.getTrgetVarNameList()) {
+	    	cvtList.put(key, "1234");
+	    }
+		
+	    System.out.println(fmt.convert(cvtList));*/
+		
+		
+		/*boolean flag = Pattern.matches("^[a-zA-Z0-9]*$", "test"); 
+		System.out.println(flag);*/
+		
+		/*String test = "(asdfasd|zxczxc)";
+		String[] orKeywords = test.toLowerCase().substring(1, test.length()-1).split("\\|");
+		System.out.println(orKeywords[0]);
+		System.out.println(orKeywords[1]);*/
+		
+		/*String test = "name={name=test}";
+		String key = test.substring(0, test.indexOf("="));
+		String value = test.substring(test.indexOf("=")+1);
+		System.out.println(key);
+		System.out.println(value);*/
+		
+		/*Map<String, Map<String, String>> a = new HashMap<>();
+		Map<String, String> b = new HashMap<>();
+		b.put("test", "test1");
+		a.put("a", b);
+		
+		System.out.println(a);
+		
+		
+		Map<String, String> a1 = a.get("a");
+		a1.put("test", "test2");
+		
+		System.out.println(a);*/
+		
+		/*Map<String, Object> test = new HashMap<>();
+		
+		if(test.containsKey("test")){
+			System.out.println("있다.");
+		}else {
+			System.out.println("없다.");
+		}*/
+		
+		
+		
+		/*String cellName = new CellAddress(1, 2).toString();
+		System.out.println(cellName);*/
+
+		
+		
+		/*ScriptEngineManager manager = new ScriptEngineManager();
+		ScriptEngine engine = manager.getEngineByName("js");
+		List<List<Object>> list = new ArrayList<>();
+		
+		List a = new ArrayList();
+		a.add(1);
+		a.add("test");
+		a.add(1.5);
+		
+		list.add(a);
+		list.add(a);
+		list.add(a);
+		
+		ObjectMapper mapper = new ObjectMapper();
+		
+		try {
+			Object result = engine.eval("var a = " + mapper.writeValueAsString(list) + "; var b = JSON.stringify(a); b");
+			List b = mapper.readValue((String)result, ArrayList.class);
+			System.out.println( b.toString() );
+		} catch (ScriptException e) {
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}*/
+		
+		
+		
+		/*String a = "CalcService.java";
+		String[] b = a.split("\\.");
+		
+		System.out.println(b[0]);*/
+		
+		long value = Long.parseLong("2020-05-08");
+		
+	}
+}

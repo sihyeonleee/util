@@ -1,0 +1,23 @@
+package main.test;
+
+import java.util.Map;
+
+import comm.DBConnection;
+
+public class SQLiteTest {
+	
+	public static void main(String[] args){
+		
+		String fileName = "D:/lee/t.db";
+		
+		DBConnection db = new DBConnection("test", "jdbc:sqlite:/" + fileName, DBConnection.SQLITE, "", "");
+		try{
+			Map<String, Object> map = db.execute(DBConnection.EXECUTE_QUERY, ".tables");
+			System.out.println(map.get("data"));
+		}catch(Exception e){
+			
+		}
+		
+	}
+	
+}

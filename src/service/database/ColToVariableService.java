@@ -1,0 +1,204 @@
+package service.database;
+
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import comm.fileio.FileService;
+import comm.fileio.TextFileReader;
+import comm.fileio.TextFileWriter;
+import comm.remote.DBConnection;
+import gui.obj.CompObj;
+import gui.obj.FrameObj;
+import main.Main;
+import service.Service;
+
+public class ColToVariableService extends Service{
+	
+	DBConnection db = null;
+	
+	public ColToVariableService() {
+		// 프레임 설정
+		width = 800;
+		height = 800;
+		layout = FrameObj.LAYOUT_GRIDBAG;
+		
+		// 컴포넌트설정
+		CompObj input1 = new CompObj();
+		input1.setHint("테이블 명 입력");
+		input1.setEvtName("tableName");
+		input1.setType(CompObj.TYPE_INPUT);
+		input1.setEventType(CompObj.EVENT_ACTION);
+		input1.setGridPosition(0, 0);
+		input1.setGridWeight(1, 1);
+		input1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(input1);
+		
+		CompObj btn1 = new CompObj();
+		btn1.setName("실행");
+		btn1.setEvtName("run");
+		btn1.setType(CompObj.TYPE_BUTTON);
+		btn1.setEventType(CompObj.EVENT_ACTION);
+		btn1.setGridPosition(1, 0);
+		btn1.setGridWeight(1, 1);
+		btn1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(btn1);
+		
+		CompObj area1 = new CompObj();
+		area1.setHint("Query 결과창");
+		area1.setType(CompObj.TYPE_TEXTAREA);
+		area1.setScrollAt(true);
+		area1.setCharY(30);
+		area1.setCharX(50);
+		area1.setGridSize(1, 1);
+		area1.setGridWeight(30, 30);
+		area1.setGridPosition(0, 1);
+		area1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(area1);
+
+		CompObj area2 = new CompObj();
+		area2.setHint("Object 결과창");
+		area2.setType(CompObj.TYPE_TEXTAREA);
+		area2.setScrollAt(true);
+		area2.setCharY(30);
+		area2.setCharX(50);
+		area2.setGridSize(1, 1);
+		area2.setGridWeight(30, 30);
+		area2.setGridPosition(1, 1);
+		area2.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(area2);
+
+//		createDbObject(0);
+	}
+	
+	@Override
+	public void doShow(String name) {
+		
+		inputs.get(0).setFont(new Font("", Font.BOLD, 15));
+		
+//		inputs.get(0).setText("TB_SUM_USER_INFO");
+		
+		super.doShow(name);
+	}
+	
+	@Override
+	public void onEvent(String type, CompObj obj, Object...objects) throws Exception {
+		
+		String tableName = inputs.get(0).getText();
+		
+		String query = "SHOW COLUMNS FROM " + tableName;
+		
+		setMessage("textArea", 0, "");
+		
+		setMessage("textArea", 1, "");
+		
+		DBConnection oc = new DBConnection("ebsesof", "jdbc:mysql://ebsocprodmysql.mysql.database.azure.com/ebsesof", DBConnection.MYSQL, "esofedu@ebsesofprodmysql", "eduesof");
+		Map<String, Object> queryResult = oc.execute(DBConnection.EXECUTE_QUERY, query);
+		
+		List<Map<String, Object>> queryData = ( List<Map<String, Object>> ) queryResult.get("data");
+		
+		// ### 변수 타입 데이터###
+		Map<String, String> varTypeMap = new HashMap<String, String>();
+		// ### 팝업 데이터 ###
+		List<String> typeInputNames = new ArrayList<>();
+		// ### 접두(미)사 데이터###
+		List<String> preSufinputNames = new ArrayList<>();
+		preSufinputNames.add("prefix");
+		preSufinputNames.add("suffix");
+		
+		for(Map<String, Object> o : queryData) {
+			String varType = (String) o.get("COLUMN_TYPE");
+			varTypeMap.put(varType, "");
+		}
+		
+		TextFileReader reader = new TextFileReader(comm.Path.ROOTPATH + FileService.PATH_DIRECTORY_PROP, FileService.PATH_FILE_COLTOVARIABLE, FileService.EXEC_FILE_LSH);
+		
+		// 로컬 저장 포맷 데이터 확인
+		Map<String, String> readeResult = reader.getKeyValueTypeDataToMap(reader.reade(true));
+		
+		// 변수 타입 데이터 셋팅
+		for(Map.Entry<String, String> readeMap : readeResult.entrySet()){
+			if( !readeMap.getKey().equals("prefix") && !readeMap.getKey().equals("suffix") ){
+				varTypeMap.put(readeMap.getKey(), readeMap.getValue());
+			}
+		}
+		
+		// 팝업창 데이터 셋팅
+		for(Map.Entry<String, String> varType : varTypeMap.entrySet()){
+			typeInputNames.add(varType.getKey());
+		}
+		
+		// ### 포맷 데이터 결과 ###
+		Map<String, String> formatTypes = Main.confirmPop("포맷 형식 지정", typeInputNames.toArray(), varTypeMap, 0, 0);
+		
+		/*if(formatTypes.size() < varTypeMap.size()){
+			alertPop("Validation Check", "입력란을 다시 확인해주세요.");
+			return;
+		}*/
+		
+		// ### 접두(미)사 데이터 결과 ###
+		Map<String, String> preSufStrs = Main.confirmPop("접두사, 접미사 지정", preSufinputNames, readeResult);
+		
+		/*if( preSufStrs.size() < preSufinputNames.size() ){
+			alertPop("Validation Check", "입력란을 다시 확인해주세요.");
+			return;
+		}*/
+		
+		// ### 포맷 데이터 로컬 저장소 업데이트 ###
+		// 새로운 포맷 데이터 오버라이드
+		for(Map.Entry<String, String> newData : formatTypes.entrySet()){
+			readeResult.put(newData.getKey(), newData.getValue());
+		}
+		readeResult.put("prefix", preSufStrs.get("prefix"));
+		readeResult.put("suffix", preSufStrs.get("suffix"));
+		
+		// 최신 데이터 문자열 셋팅
+		String newDataStr = "";
+		for(Map.Entry<String, String> newData : readeResult.entrySet()){
+			newDataStr += newData.getKey() + "=" + newData.getValue() + "\n";
+		}
+		
+		// 최신 데이터 저장
+		TextFileWriter writer = new TextFileWriter(comm.Path.ROOTPATH + FileService.PATH_DIRECTORY_PROP, FileService.PATH_FILE_COLTOVARIABLE, FileService.EXEC_FILE_LSH);
+		writer.write(newDataStr, false);
+		// ##############################
+		
+		setContentsProc(queryData, formatTypes, preSufStrs);
+		
+	}
+	
+	public void setContentsProc(List<Map<String, Object>> queryData, Map<String, String> formatTypes, Map<String, String> preSufStrs){
+		// 
+		for(Map<String, Object> obj : queryData) {
+			
+			String colName = (String) obj.get("COLUMN_NAME");
+			String colType = (String) obj.get("COLUMN_TYPE");
+			String lowCase = colName.toLowerCase();
+			String[] sp_ = lowCase.split("_");
+			String vrblName = "";
+			
+			for(int i=0; i<sp_.length; i++) {
+				
+				String sp = sp_[i];
+				
+				if( i != 0 ) {
+					sp = sp.substring(0, 1).toUpperCase() + sp.substring(1);
+				}
+				
+				vrblName += sp;
+				
+			}
+			
+			String queryStr = colName + " AS " + vrblName;
+			String voStr = preSufStrs.get("prefix") + " " + formatTypes.get(colType) + " " + vrblName + preSufStrs.get("suffix");
+			
+			appendMessage("textArea", 0, queryStr + "\n");
+			appendMessage("textArea", 1, voStr + "\n");
+			
+		}
+	}
+	
+}

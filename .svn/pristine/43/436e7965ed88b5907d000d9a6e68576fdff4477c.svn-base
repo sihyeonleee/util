@@ -1,0 +1,294 @@
+package service.manager.task;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
+
+public class TaskObject extends JLabel implements MouseListener, ActionListener{
+	
+	/**
+	 * @Date   : 2020. 1. 8.
+	 * @Role   : 
+	 * @Dcpt   : 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	private final Font font = new Font("바탕", Font.PLAIN, 11);
+
+	public final static String OPEN_FILE = "파일열기";
+	public final static String DELETE_FILE = "파일삭제";
+	public final static String UPDATE_TAG = "태그수정";
+	public final static String OPEN_FOLDER = "폴더열기";
+	public final static String FILE_INFO = "파일정보";
+	public final static String FILE_TYPE = "파일구분";
+	
+	private String[] rightClickOptions = {OPEN_FILE, DELETE_FILE, OPEN_FOLDER, UPDATE_TAG, FILE_INFO, FILE_TYPE};
+	private JPopupMenu popupMenu;
+
+	
+	
+	private Map<String, String> data = new HashMap<>();
+	
+	private String uuid;
+	private String name;
+	private String type;
+	private String color;
+	private String start;
+	private String end;
+	private String create;
+	private String comple;
+	private String tag;
+	private String tasksStr;
+	private String[] tasks;
+	private String filesStr;
+	private String[] files;
+	
+	public TaskObject(Map<String, String> data){
+		this.data = data;
+		parse();
+		init();
+	}
+	
+	public void parse(){
+		if(data.containsKey("uuid")) this.uuid = data.get("uuid");
+		if(data.containsKey("name")) this.name = data.get("name");
+		if(data.containsKey("type")) this.type = data.get("type");
+		if(data.containsKey("start")) this.start = data.get("start");
+		if(data.containsKey("end")) this.end = data.get("end");
+		if(data.containsKey("color")) this.color = data.get("color");
+		if(data.containsKey("comple")) this.comple = data.get("comple");
+		if(data.containsKey("create")) this.create = data.get("create");
+		if(data.containsKey("tag")) this.tag = data.get("tag");
+		if(data.containsKey("tasks")) {
+			this.tasksStr = data.get("tasks");
+			this.tasks = tasksStr.split(",sep");
+		}
+		if(data.containsKey("files")){
+			this.filesStr = data.get("files");
+			this.files = filesStr.split(",sep");
+		}
+	}
+	
+	public void init(){
+		
+		this.setOpaque(false);
+		this.setLayout(new FlowLayout());
+		
+		JRadioButton radioBtn = new JRadioButton(this.name);
+		radioBtn.setFont(font);
+		
+		JLabel udtBtn = new JLabel("수정");
+		JLabel delBtn = new JLabel("삭제");
+		udtBtn.setForeground(Color.BLUE);
+		delBtn.setForeground(Color.BLACK);
+		udtBtn.setFont(font);
+		delBtn.setFont(font);
+		
+		JPanel right = new JPanel();
+		right.add(udtBtn);
+		right.add(delBtn);
+		
+		JPanel wrap = new JPanel(new BorderLayout());
+		wrap.add(radioBtn, BorderLayout.WEST);
+		wrap.add(right, BorderLayout.EAST);
+		
+		this.popupMenu = new JPopupMenu();
+		
+		// 팝업에 파일 제목 셋팅
+		JMenuItem name = new JMenuItem(this.getName());
+		name.setBackground(Color.gray);
+		name.setForeground(Color.white);
+		name.addActionListener(this);
+		this.popupMenu.add(name);
+		
+		// 파일 기능 팝업 추가
+		for(int j=0;j<rightClickOptions.length; j++) {
+			String menu = rightClickOptions[j];
+			final JMenuItem item = new JMenuItem(menu);
+			item.setBackground(Color.WHITE);
+			item.setForeground(Color.BLACK);
+			item.setFont(font);
+			item.addActionListener(this);
+			this.popupMenu.add(item);
+		}
+		
+		radioBtn.setComponentPopupMenu(this.popupMenu);
+		
+		this.add(wrap);
+		
+	}
+	
+	
+	
+	
+	
+	
+
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+
+	public Map<String, String> getData() {
+		return data;
+	}
+
+	public void setData(Map<String, String> data) {
+		this.data = data;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getColor() {
+		return color;
+	}
+
+	public void setColor(String color) {
+		this.color = color;
+	}
+
+	public String getTag() {
+		return tag;
+	}
+
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
+	public String getTasksStr() {
+		return tasksStr;
+	}
+
+	public void setTasksStr(String tasksStr) {
+		this.tasksStr = tasksStr;
+	}
+
+	public String getFilesStr() {
+		return filesStr;
+	}
+
+	public void setFilesStr(String filesStr) {
+		this.filesStr = filesStr;
+	}
+
+	public Font getFont() {
+		return font;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String[] getTasks() {
+		return tasks;
+	}
+
+	public void setTasks(String[] tasks) {
+		this.tasks = tasks;
+	}
+
+	public String[] getFiles() {
+		return files;
+	}
+
+	public void setFiles(String[] files) {
+		this.files = files;
+	}
+
+	public String getComple() {
+		return comple;
+	}
+
+	public void setComple(String comple) {
+		this.comple = comple;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getCreate() {
+		return create;
+	}
+
+	public void setCreate(String create) {
+		this.create = create;
+	}
+
+	public String getStart() {
+		return start;
+	}
+
+	public void setStart(String start) {
+		this.start = start;
+	}
+
+	public String getEnd() {
+		return end;
+	}
+
+	public void setEnd(String end) {
+		this.end = end;
+	}
+	
+}

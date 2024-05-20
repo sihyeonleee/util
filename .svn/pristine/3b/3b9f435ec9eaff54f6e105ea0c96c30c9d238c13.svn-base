@@ -1,0 +1,129 @@
+package comm;
+
+import javax.swing.JTextArea;
+
+public class Logger {
+	
+    private volatile static Logger instance;
+    
+    private JTextArea area;
+    private JTextArea errArea;
+    
+    private String log = "";
+    private String errLog = "";
+    
+    private Logger(){}
+     
+    public static Logger getInstance(){
+        
+        if(instance == null){
+            synchronized (Logger.class) {
+                if(instance == null)
+                    instance = new Logger();
+            }
+ 
+        }
+        return instance;
+    }
+    
+    public void log( String log ) {
+    	
+//    	System.out.println(log);
+    	
+    	log = log + "\n";
+    	
+    	if(area == null) {
+    		
+    		this.log += log;
+    		
+    	}else {
+    		
+    		if(!this.log.equals("")) {
+    			this.log = "";
+    		}
+    		
+    		this.area.append(log);
+    		
+    		this.area.setCaretPosition(this.area.getDocument().getLength());
+    	}
+    }
+    
+    public void err(String errLog) {
+    	
+    	errLog = errLog + "\n";
+    	
+    	if(errArea == null) {
+    		
+    		this.errLog += errLog;
+    		
+    	}else {
+    		
+    		if(!this.errLog.equals("")) {
+    			this.errLog = "";
+    		}
+    		
+    		this.errArea.append(errLog);
+    		
+    		this.errArea.setCaretPosition(this.errArea.getDocument().getLength());
+    	}
+    }
+    
+    public void err(Exception err) {
+    	StackTraceElement[] stacks = err.getStackTrace();
+    	
+//    	if(errArea != null) {
+    		
+    		this.err("\n\n\n\n");
+        	this.err("####### ERROR [ " + err.getLocalizedMessage() + " ] #######");
+        	
+        	for(StackTraceElement stack : stacks) {
+        		String msg = "## " + stack.toString();
+        		this.err(msg);
+        	}
+        	
+        	this.err("####### ERROR [ " + err.getLocalizedMessage() + " ] #######");
+        	
+//    	} else {
+//    		
+//    		this.log("\n\n\n\n");
+//        	this.log("####### ERROR [ " + err.getLocalizedMessage() + " ] #######");
+//        	
+//        	for(StackTraceElement stack : stacks) {
+//        		String msg = "## " + stack.toString();
+//        		this.log(msg);
+//        	}
+//        	
+//        	this.log("####### ERROR [ " + err.getLocalizedMessage() + " ] #######");
+//        	
+//    	}
+    }
+    
+    public void setArea(JTextArea area) {
+    	
+    	if(this.area != null) {
+    		this.area.append( "Logger.java ### Already exists. : JTextArea \n" );
+    		return;
+    	}
+    	
+    	this.area = area;
+    	
+    	if(!this.log.equals("")) {
+    		this.area.setText(this.log);
+    	}
+    	
+    }
+    
+    public void setErrArea(JTextArea errArea) {
+    	
+    	if(this.errArea != null) {
+    		return;
+    	}
+    	
+    	this.errArea = errArea;
+    	
+    	if(!this.errLog.equals("")) {
+    		this.errArea.setText(this.errLog);
+    	}
+    	
+    }
+}

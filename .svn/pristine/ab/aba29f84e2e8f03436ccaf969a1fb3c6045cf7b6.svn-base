@@ -1,0 +1,273 @@
+package service.write; 
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.TrayIcon.MessageType;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+import comm.CustomThread;
+import comm.Path;
+import comm.fileio.FileChooser;
+import gui.main.TrayIconHandler;
+import gui.obj.CompObj;
+import gui.obj.FrameObj;
+import service.Service;  
+
+public class FilePathCopyService extends Service{ 
+	
+	private String strDirNm = "deploy_main";
+	
+	public FilePathCopyService(){ 
+		
+		// 프레임 설정
+		width = 270;
+		height = 400;
+		layout = FrameObj.LAYOUT_GRIDBAG;
+
+		// 컴포넌트 설정
+		CompObj btn1 = new CompObj();
+		btn1.setName("복사");
+		btn1.setEvtName("convert");
+		btn1.setType(CompObj.TYPE_BUTTON);
+		btn1.setEventType(CompObj.EVENT_ACTION);
+		btn1.setGridPosition(0, 0);
+		btn1.setGridSize(1, 1);
+		btn1.setGridWeight(1, 1);
+		btn1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(btn1);
+
+		CompObj btn2 = new CompObj();
+		btn2.setName("초기화");
+		btn2.setEvtName("delete");
+		btn2.setType(CompObj.TYPE_BUTTON);
+		btn2.setEventType(CompObj.EVENT_ACTION);
+		btn2.setGridPosition(1, 0);
+		btn2.setGridSize(1, 1);
+		btn2.setGridWeight(1, 1);
+		btn2.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(btn2);
+		
+		CompObj area1 = new CompObj();
+		area1.setEnabled(true);
+		area1.setType(CompObj.TYPE_PANEL);
+		area1.setEventType(CompObj.EVENT_DRAGDROP);
+		area1.setLayout(CompObj.LAYOUT_GRID, 0, 1, 2, 2);
+		area1.setEvtName("area");
+		area1.setScrollAt(true);
+		area1.setGridSize(2, 1);
+		area1.setGridWeight(30, 100);
+		area1.setGridPosition(0, 1);
+		area1.setArrangeType(GridBagConstraints.BOTH);
+		componentObjs.add(area1);
+
+	}
+
+	@Override
+	public void doShow(String name) {
+		// Component Object Settings 
+		super.doShow(name);
+		
+		buttons.get(0).setOpaque(true);
+		buttons.get(0).setForeground(new Color(150, 150, 150, 255));
+		buttons.get(0).setBackground(new Color(230, 230, 230, 255));
+		buttons.get(1).setOpaque(true);
+		buttons.get(1).setForeground(new Color(150, 150, 150, 255));
+		buttons.get(1).setBackground(new Color(230, 230, 230, 255));
+		
+		panels.get(0).requestFocus();
+
+	}
+
+	@Override
+	public void onEvent(String type, CompObj obj, Object...objects) throws Exception {
+		
+		
+		if(type.equals("change") && "area".equals(obj.getEvtName())){
+			addFiles(objects);
+		}else if(type.equals("click") && "delete".equals(obj.getEvtName())){
+			panels.get(0).removeAll();
+			panels.get(0).revalidate();
+			panels.get(0).repaint();
+		}else if(type.equals("click") && "convert".equals(obj.getEvtName())){
+			String threadName = "FilePathCopyService";
+			runThread(threadName, false);
+		}
+		
+	}
+	
+	@Override
+	public CustomThread createThread(){
+		return new CustomThread(){
+			@Override
+			public void run() {
+				Component[] objs = (Component[]) panels.get(0).getComponents();
+				
+				StringBuffer msg = new StringBuffer();
+				
+				for(Component obj : objs){
+					
+					FileObj fObj = (FileObj) obj;
+					
+					File dir = new File(fObj.getdPath());
+					if(!dir.exists()) dir.mkdirs();
+					
+					File dest = new File(fObj.getdPath() + File.separator + fObj.getName());
+					File source = new File(fObj.getsPath() + File.separator + fObj.getName());
+					
+					int result = FileChooser.copyFile(source, dest);
+					msg.append(fObj.getName() + (
+							  result > 0 
+							? " >> <span style='color:green'>" + strDirNm + fObj.getdPath().split(strDirNm)[1] + "</span> <br/>" // 성공 결과
+							: " :: <span style='color:red'>실패</span> <br/>")													 // 실패 결과
+					);
+					
+				}
+				
+				JLabel label = new JLabel("<html>" + msg.toString() + "</html>");
+				
+				alertPop("작업결과", label);
+				
+			}
+		};
+	}
+	
+	public void addFiles(Object...objects){
+		
+		// 추가할 위치 기본으로 묻기
+		File[] files = (File[]) objects;
+		List<String> fileNames = new ArrayList<>();
+        
+		for (File file : files) {
+			panels.get(0).add(new FileObj(file.getName(), file.getParent()));
+        }
+		
+		panels.get(0).revalidate();
+		
+	}
+	
+	
+	
+	
+	/*
+	 * File Object
+	 * */
+	
+	public class FileObj extends JPanel{
+		
+		private String name;
+		private String path;
+		
+		private String sPath;
+		private String dPath;
+		
+		public FileObj(String name, String path){
+			
+			FileObj thisObj = this;
+			
+			this.name = name;
+			this.path = path;
+			
+			
+			String exec = name.substring(name.lastIndexOf(".")+1);
+			
+			try{
+				if(exec.equals("java")){
+					
+					String orgin = "src\\\\main\\\\java";
+					
+					String target = "target" + File.separator + "classes";
+					String dest = Path.DESKTOPPATH + File.separator + strDirNm + File.separator + "classes";
+					String[] paths = path.split(orgin);
+					
+					sPath = paths[0] + target + paths[1];
+					dPath = dest + paths[1];
+					this.name = name.substring(0, name.lastIndexOf(".")) + ".class";
+					
+				}else if(exec.equals("xml") && name.toLowerCase().indexOf("sql") > 0){
+					
+					String orgin1 = "src\\\\main\\\\resources";
+					String orgin2 = "target\\\\classes";
+					
+					String dest = Path.DESKTOPPATH + File.separator + strDirNm + File.separator + "classes";
+					
+					String[] paths = null;
+					if(path.indexOf("src\\main\\resources") > 0) paths = path.split(orgin1);
+					else if(path.indexOf("target\\class") > 0) paths = path.split(orgin2);
+					
+					sPath = path;
+					dPath = dest + paths[1];
+					
+				}else {
+					sPath = path;
+					dPath = Path.DESKTOPPATH + File.separator + strDirNm + path.split("src\\\\main")[1];
+				}
+			}catch(Exception err){
+				TrayIconHandler.displayMessage("ERROR", name + " ::: FAIL " + err.getStackTrace(), MessageType.ERROR);
+				err.printStackTrace();
+				log.err(err);
+				return;
+			}
+			
+			
+			JLabel nmLabel = new JLabel(name.length() > 12 ? name.substring(0, 12) : name);
+			nmLabel.setToolTipText(name);
+			JButton delLabel = new JButton("삭제");
+			
+			delLabel.setBackground(Color.GRAY);
+			
+			this.add(nmLabel);
+			this.add(delLabel);
+			
+			delLabel.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					panels.get(0).remove(thisObj);
+					panels.get(0).revalidate();
+					panels.get(0).repaint();
+				}
+			});
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String name) {
+			this.name = name;
+		}
+
+		public String getPath() {
+			return path;
+		}
+
+		public void setPath(String path) {
+			this.path = path;
+		}
+
+		public String getsPath() {
+			return sPath;
+		}
+
+		public void setsPath(String sPath) {
+			this.sPath = sPath;
+		}
+
+		public String getdPath() {
+			return dPath;
+		}
+
+		public void setdPath(String dPath) {
+			this.dPath = dPath;
+		}
+
+	}
+}

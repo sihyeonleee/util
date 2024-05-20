@@ -1,0 +1,11 @@
+package comm;
+
+import java.io.File;
+
+public class Path {
+	
+	public static String ROOTPATH = File.separator;
+	
+	public static String COREPATH = "." + File.separator + "Core.exe";
+
+}
