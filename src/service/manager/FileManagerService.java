@@ -75,6 +75,7 @@ public class FileManagerService extends Service implements FileObjEventListener{
 	private List<FileObject> keyObjects = new ArrayList<>();
 	private Integer keyObjectIndex;
 	
+	private JLabel projectNameLabel = new JLabel("---");
 	private JLabel fileNameLabel = new JLabel("---");
 	
 	private Font big = new Font("함초롱바탕", Font.BOLD, 13);
@@ -87,7 +88,7 @@ public class FileManagerService extends Service implements FileObjEventListener{
 
 		// 프레임 설정
 		width = 480;
-		height = 350;
+		height = 450;
 		divisionX = 103;
 		divisionY = 99;
 		isAlwasOnTop = true;
@@ -200,6 +201,16 @@ public class FileManagerService extends Service implements FileObjEventListener{
 		panel1.setArrangeType(GridBagConstraints.BOTH);
 		componentObjs.add(panel1);
 		
+		CompObj projectNameSpace = new CompObj();
+		projectNameSpace.setType(CompObj.TYPE_PANEL);
+		projectNameSpace.setLayout(CompObj.LAYOUT_FLOW);
+		projectNameSpace.setScrollAt(false);
+		projectNameSpace.setGridSize(6, 1);
+		projectNameSpace.setGridWeight(1, 3);
+		projectNameSpace.setArrangeType(GridBagConstraints.BOTH);
+		projectNameSpace.setGridPosition(0, 3);
+		componentObjs.add(projectNameSpace);
+		
 		CompObj fileNameSpace = new CompObj();
 		fileNameSpace.setType(CompObj.TYPE_PANEL);
 		fileNameSpace.setLayout(CompObj.LAYOUT_FLOW);
@@ -207,7 +218,7 @@ public class FileManagerService extends Service implements FileObjEventListener{
 		fileNameSpace.setGridSize(6, 1);
 		fileNameSpace.setGridWeight(1, 3);
 		fileNameSpace.setArrangeType(GridBagConstraints.BOTH);
-		fileNameSpace.setGridPosition(0, 3);
+		fileNameSpace.setGridPosition(0, 4);
 		componentObjs.add(fileNameSpace);
 		
 	}
@@ -232,7 +243,8 @@ public class FileManagerService extends Service implements FileObjEventListener{
 		
 		((JComponent) panels.get(1)).setBorder(null);
 		panels.get(0).setBackground(Color.white);
-		panels.get(1).add(fileNameLabel);
+		panels.get(1).add(projectNameLabel);
+		panels.get(2).add(fileNameLabel);
 		buttons.get(0).setFont(small);
 		buttons.get(1).setFont(small);
 		buttons.get(2).setFont(small);
@@ -241,6 +253,7 @@ public class FileManagerService extends Service implements FileObjEventListener{
 		buttons.get(1).setBackground(new Color(235,235,235,255));
 		buttons.get(2).setBackground(new Color(235,235,235,255));
 		buttons.get(3).setBackground(new Color(235,235,235,255));
+		projectNameLabel.setFont(small);
 		fileNameLabel.setFont(big);
 		
 		comboBoxes.get(0).setFont(small);
@@ -553,6 +566,7 @@ public class FileManagerService extends Service implements FileObjEventListener{
 	@Override
 	public void onFocusEvt(FileObject label) {
 		fileNameLabel.setText(label.getFileName());
+		projectNameLabel.setText(label.getProjectName());
 	}
 	
 	
@@ -578,8 +592,8 @@ public class FileManagerService extends Service implements FileObjEventListener{
 			if(this.keyObjects.isEmpty()) {
 				Main.alertPop("목록이 비어있습니다.");
 			}else if(!e.isShiftDown()) {
-				if(Main.confirmPop("파일 실행", this.keyObjects.get(this.keyObjectIndex).getFileName() + " 파일을 실행 하시겠습니까?") > 0){
-					FileObject keyObject = this.keyObjects.get(this.keyObjectIndex);
+				FileObject keyObject = this.keyObjects.get(this.keyObjectIndex);
+				if(Main.confirmPop("파일 실행", "[" + keyObject.getProjectName() + "]\n " + keyObject.getFileName() + " 파일을 실행 하시겠습니까?") > 0){
 					FileChooser.exec(keyObject.getFilePath(), false);
 				}
 			}else if(e.isShiftDown()) {

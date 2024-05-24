@@ -2,7 +2,6 @@ package service.config;
 
 import java.awt.GridBagConstraints;
 
-import gui.obj.CompObj;
 import gui.obj.FrameObj;
 import main.Main;
 import service.Service;
